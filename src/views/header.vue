@@ -25,16 +25,16 @@ const timeFn = () => {
 };
 timeFn();
 
-// 三大智慧医疗大屏导航配置
+// 华灿运河·智创中国 三大数字可视化大屏导航配置
 const screenList = [
-  { name: "综合监控", path: "/index", title: "智慧医疗综合监控指挥大屏", icon: "🏥" },
-  { name: "急救调度", path: "/emergency", title: "智慧急救与应急调度大屏", icon: "🚑" },
-  { name: "全景运营", path: "/operation", title: "智慧医院全景运营监管大屏", icon: "📊" },
+  { name: "全景总览", path: "/index", title: "华灿运河·智创中国数字驾驶舱", icon: "🌐" },
+  { name: "运河文脉", path: "/culture", title: "大运河文化数字化与非遗智创大屏", icon: "🏮" },
+  { name: "智创引擎", path: "/innovation", title: "智创中国·产学研协同引擎大屏", icon: "🚀" },
 ];
 
 const currentTitle = computed(() => {
   const found = screenList.find((item) => item.path === route.path);
-  return found ? found.title : "智慧医疗综合监控指挥大屏";
+  return found ? found.title : "华灿运河·智创中国数字驾驶舱";
 });
 
 const navTo = (path: string) => {

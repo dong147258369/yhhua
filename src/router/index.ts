@@ -16,14 +16,14 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/index/index.vue'),
       },
       {
-        path: '/emergency',
-        name: 'emergency',
-        component: () => import('@/views/emergency/index.vue'),
+        path: '/culture',
+        name: 'culture',
+        component: () => import('@/views/culture/index.vue'),
       },
       {
-        path: '/operation',
-        name: 'operation',
-        component: () => import('@/views/operation/index.vue'),
+        path: '/innovation',
+        name: 'innovation',
+        component: () => import('@/views/innovation/index.vue'),
       }
     ]
   },

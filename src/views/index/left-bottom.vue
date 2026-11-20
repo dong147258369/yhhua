@@ -1,227 +1,212 @@
 <script setup lang="ts">
-import { leftBottom } from "@/api";
-import SeamlessScroll from "@/components/seamless-scroll";
-import { computed, onMounted, reactive } from "vue";
-import { useSettingStore } from "@/stores";
-import { storeToRefs } from "pinia";
-import EmptyCom from "@/components/empty-com";
-import { ElMessage } from "element-plus";
+import { ref, computed } from "vue";
+import { canalProvincesData } from "@/mock/huacan";
 
-const settingStore = useSettingStore();
-const { defaultOption, indexConfig } = storeToRefs(settingStore);
-const state = reactive<any>({
-  list: [],
-  defaultOption: {
-    ...defaultOption.value,
-    singleHeight: 256,
-    limitScrollNum: 4,
-  },
-  scroll: true,
+type SortMode = "score" | "projects" | "outputValue";
+const activeMode = ref<SortMode>("score");
+
+const modeLabels: { key: SortMode; label: string; unit: string }[] = [
+  { key: "score", label: "活力指数", unit: "分" },
+  { key: "projects", label: "项目数", unit: "项" },
+  { key: "outputValue", label: "孵化产值", unit: "亿元" },
+];
+
+const currentUnit = computed(
+  () => modeLabels.find((m) => m.key === activeMode.value)?.unit || ""
+);
+
+const rankedList = computed(() => {
+  const sorted = [...canalProvincesData].sort(
+    (a, b) => b[activeMode.value] - a[activeMode.value]
+  );
+  const maxVal = sorted[0]?.[activeMode.value] || 1;
+  return sorted.map((item, idx) => ({
+    ...item,
+    rank: idx + 1,
+    percent: Math.max(18, Math.round((item[activeMode.value] / maxVal) * 100)),
+  }));
 });
 
-const getData = () => {
-  leftBottom({ limitNum: 20 })
-    .then((res) => {
-      console.log("左下--急救通道与出车动态", res);
-      if (res.success) {
-        state.list = res.data.list;
-      } else {
-        ElMessage({
-          message: res.msg,
-          type: "warning",
-        });
-      }
-    })
-    .catch((err) => {
-      ElMessage.error(err);
-    });
-};
-const addressHandle = (item: any) => {
-  let name = item.provinceName;
-  if (item.cityName) {
-    name += " · " + item.cityName;
-    if (item.countyName) {
-      name += " [" + item.countyName + "]";
-    }
-  }
-  return name;
-};
-const comName = computed(() => {
-  if (indexConfig.value.leftBottomSwiper) {
-    return SeamlessScroll;
-  } else {
-    return EmptyCom;
-  }
-});
-onMounted(() => {
-  getData();
-});
+// 复制一份用于无缝连续向上滚动
+const marqueeList = computed(() => [...rankedList.value, ...rankedList.value]);
 </script>
 
 <template>
-  <div class="left_boottom_wrap beautify-scroll-def" :class="{ 'overflow-y-auto': !indexConfig.leftBottomSwiper }">
-    <component
-      :is="comName"
-      :list="state.list"
-      v-model="state.scroll"
-      :singleHeight="state.defaultOption.singleHeight"
-      :step="state.defaultOption.step"
-      :limitScrollNum="state.defaultOption.limitScrollNum"
-      :hover="state.defaultOption.hover"
-      :singleWaitTime="state.defaultOption.singleWaitTime"
-      :wheel="state.defaultOption.wheel"
-    >
-      <ul class="left_boottom">
-        <li class="left_boottom_item" v-for="(item, i) in state.list" :key="i">
-          <span class="orderNum doudong">{{ Number(i) + 1 }}</span>
-          <div class="inner_right">
-            <div class="dibu"></div>
-            <div class="flex">
-              <div class="info">
-                <span class="labels">急救车号：</span>
-                <span class="text-content zhuyao doudong wangguan"> {{ item.gatewayno }}</span>
-              </div>
-              <div class="info">
-                <span class="labels">时间：</span>
-                <span class="text-content" style="font-size: 12px"> {{ item.createTime }}</span>
-              </div>
-            </div>
+  <div class="province-rank-wrap">
+    <div class="mode-tabs">
+      <span
+        v-for="m in modeLabels"
+        :key="m.key"
+        class="mode-btn"
+        :class="{ active: activeMode === m.key }"
+        @click="activeMode = m.key"
+      >
+        {{ m.label }}
+      </span>
+    </div>
 
-            <span
-              class="types doudong"
-              :class="{
-                typeRed: item.onlineState == 0,
-                typeGreen: item.onlineState == 1,
-              }"
-              >{{ item.onlineState == 1 ? "已送达" : "转运中" }}</span
-            >
-
-            <div class="info addresswrap">
-              <span class="labels">接诊院区：</span>
-              <span class="text-content ciyao" style="font-size: 12px"> {{ addressHandle(item) }}</span>
-            </div>
+    <div class="scroll-viewport">
+      <div class="scroll-track">
+        <div
+          v-for="(item, index) in marqueeList"
+          :key="`${item.name}-${index}`"
+          class="rank-row"
+          :class="{ 'is-top3': item.rank <= 3 }"
+        >
+          <span class="rank-badge">0{{ item.rank }}</span>
+          <span class="prov-name">{{ item.shortName }}</span>
+          <div class="bar-bg">
+            <div class="bar-fill" :style="{ width: `${item.percent}%` }"></div>
           </div>
-        </li>
-      </ul>
-    </component>
+          <span class="prov-val">
+            {{
+              activeMode === "projects"
+                ? item[activeMode].toLocaleString()
+                : item[activeMode]
+            }}{{ currentUnit }}
+          </span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
-.left_boottom_wrap {
-  overflow: hidden;
+@keyframes scrollUpRank {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.province-rank-wrap {
   width: 100%;
   height: 100%;
-}
-
-.doudong {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  backface-visibility: hidden;
-}
 
-.overflow-y-auto {
-  overflow-y: auto;
-}
+  .mode-tabs {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 2px 6px 8px;
+    flex-shrink: 0;
 
-.left_boottom {
-  width: 100%;
-  height: 100%;
+    .mode-btn {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #94a3b8;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      transition: all 0.2s;
 
-  .left_boottom_item {
+      &:hover {
+        color: #f8fafc;
+        border-color: #00e5c3;
+      }
+
+      &.active {
+        color: #040b1a;
+        background: linear-gradient(90deg, #00e5c3, #f6c85f);
+        border-color: transparent;
+        font-weight: 700;
+      }
+    }
+  }
+
+  .scroll-viewport {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    padding: 0 4px;
+
+    &:hover .scroll-track {
+      animation-play-state: paused;
+    }
+  }
+
+  .scroll-track {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: scrollUpRank 18s linear infinite;
+  }
+
+  .rank-row {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 8px;
-    font-size: 14px;
-    margin: 10px 0;
-    .orderNum {
-      margin: 0 16px 0 -20px;
-    }
+    gap: 10px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: rgba(10, 26, 58, 0.55);
+    border: 1px solid rgba(56, 189, 248, 0.14);
+    flex-shrink: 0;
 
-    .info {
-      margin-right: 10px;
-      display: flex;
-      align-items: center;
-      color: #fff;
-
-      .labels {
-        flex-shrink: 0;
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.6);
+    &.is-top3 {
+      border-color: rgba(246, 200, 95, 0.35);
+      .rank-badge {
+        background: linear-gradient(135deg, #f6c85f, #f59e0b);
+        color: #040b1a;
       }
-
-      .zhuyao {
-        color: $primary-color;
-        font-size: 15px;
+      .bar-fill {
+        background: linear-gradient(90deg, #00e5c3, #f6c85f);
+        box-shadow: 0 0 8px rgba(246, 200, 95, 0.45);
       }
-
-      .ciyao {
-        color: rgba(255, 255, 255, 0.8);
-      }
-
-      .warning {
-        color: #e6a23c;
-        font-size: 15px;
+      .prov-val {
+        color: #f6c85f;
       }
     }
 
-    .inner_right {
-      position: relative;
-      height: 100%;
-      width: 380px;
-      flex-shrink: 0;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      .dibu {
-        position: absolute;
-        height: 2px;
-        width: 104%;
-        background-image: url("@/assets/img/zuo_xuxian.png");
-        bottom: -10px;
-        left: -2%;
-        background-size: cover;
-      }
-      .addresswrap {
-        width: 100%;
-        display: flex;
-        margin-top: 8px;
-      }
-    }
-
-    .wangguan {
-      color: #1890ff;
-      font-weight: 900;
-      font-size: 15px;
-      width: 100px;
+    .rank-badge {
+      width: 24px;
+      height: 18px;
+      line-height: 18px;
+      text-align: center;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
       flex-shrink: 0;
     }
 
-    .time {
-      font-size: 12px;
-      color: #fff;
-    }
-
-    .address {
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .types {
-      width: 48px;
+    .prov-name {
+      width: 40px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
       flex-shrink: 0;
-      font-size: 12px;
+    }
+
+    .bar-bg {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+
+      .bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #0284c7, #38bdf8);
+        transition: width 0.5s ease;
+      }
+    }
+
+    .prov-val {
+      width: 78px;
       text-align: right;
-    }
-
-    .typeRed {
-      color: #fc1a1a;
-    }
-
-    .typeGreen {
-      color: #29fc29;
+      font-size: 12px;
+      font-weight: 700;
+      color: #00e5c3;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
     }
   }
 }

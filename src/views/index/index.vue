@@ -13,42 +13,40 @@ import RightBottom from "./right-bottom.vue";
 <template>
   <div class="index-box">
     <div class="contetn_left">
-      <!-- <div class="pagetab">
-        <div class="item">实时监测</div>
-        <div class="item">统计分析</div>
-      </div> -->
       <ItemWrap
         class="contetn_left-bottom contetn_lr-item"
-        title="急救通道与出车动态"
-        style="padding: 0 10px 16px 10px"
+        title="运河沿线8省市智创活力榜"
+        style="padding: 0 10px 12px 10px"
       >
         <LeftBottom />
       </ItemWrap>
-      <ItemWrap class="contetn_left-top contetn_lr-item" title="医疗设备运行监控">
+      <ItemWrap class="contetn_left-top contetn_lr-item" title="运河数字经济核心总览">
         <LeftTop />
       </ItemWrap>
-      <ItemWrap class="contetn_left-center contetn_lr-item" title="患者就诊分类态势">
+      <ItemWrap class="contetn_left-center contetn_lr-item" title="运河六大核心产业布局">
         <LeftCenter />
       </ItemWrap>
     </div>
+
     <div class="contetn_center">
-      <CenterMap class="contetn_center_top" title="医联体与医疗协作网" />
-      <ItemWrap class="contetn_center-bottom" title="重点科室床位使用率">
+      <CenterMap class="contetn_center_top" title="京杭大运河数字孪生与协同走廊" />
+      <ItemWrap class="contetn_center-bottom" title="运河沿岸成果转化与数字经济趋势">
         <CenterBottom />
       </ItemWrap>
     </div>
+
     <div class="contetn_right">
-      <ItemWrap class="contetn_left-bottom contetn_lr-item" title="重症监护危急值预警">
+      <ItemWrap
+        class="contetn_lr-item"
+        title="运河沿线城市智创实时动态"
+        style="padding: 0 10px 12px 10px"
+      >
         <RightBottom />
       </ItemWrap>
-      <ItemWrap class="contetn_left-bottom contetn_lr-item" title="门急诊与危急值走势">
+      <ItemWrap class="contetn_lr-item" title="大运河五维数智赋能评估">
         <RightTop />
       </ItemWrap>
-      <ItemWrap
-        class="contetn_left-bottom contetn_lr-item"
-        title="科室就诊负荷(TOP8)"
-        style="padding: 0 10px 16px 10px"
-      >
+      <ItemWrap class="contetn_lr-item" title="运河数字化与绿色航运指标">
         <RightCenter />
       </ItemWrap>
     </div>
@@ -62,7 +60,6 @@ import RightBottom from "./right-bottom.vue";
   min-height: calc(100% - 64px);
   justify-content: space-between;
 }
-//左边 右边 结构一样
 .contetn_left,
 .contetn_right {
   display: flex;
@@ -75,7 +72,7 @@ import RightBottom from "./right-bottom.vue";
 }
 .contetn_center {
   flex: 1;
-  margin: 0 54px;
+  margin: 0 36px;
   display: flex;
   flex-direction: column;
   justify-content: space-around;

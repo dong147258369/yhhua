@@ -1,191 +1,134 @@
 <script setup lang="ts">
-import { rightBottom } from "@/api";
-import SeamlessScroll from "@/components/seamless-scroll";
-import { computed, onMounted, reactive } from "vue";
-import { useSettingStore } from "@/stores";
-import { storeToRefs } from "pinia";
-import EmptyCom from "@/components/empty-com";
-import { ElMessage } from "element-plus";
+import { ref, computed } from "vue";
+import { liveActivitiesData, type LiveActivityItem } from "@/mock/huacan";
 
-const settingStore = useSettingStore();
-const { defaultOption, indexConfig } = storeToRefs(settingStore);
-const state = reactive<any>({
-  list: [],
-  defaultOption: {
-    ...defaultOption.value,
-    singleHeight: 252,
-    limitScrollNum: 3,
-  },
-  scroll: true,
-});
+const activeDetailId = ref<string | null>(null);
+const marqueeItems = computed(() => [...liveActivitiesData, ...liveActivitiesData]);
 
-const getData = () => {
-  rightBottom({ limitNum: 20 })
-    .then((res) => {
-      console.log("右下--危急值预警", res);
-      if (res.success) {
-        state.list = res.data.list;
-      } else {
-        ElMessage({
-          message: res.msg,
-          type: "warning",
-        });
-      }
-    })
-    .catch((err) => {
-      ElMessage.error(err);
-    });
+const toggleDetail = (id: string) => {
+  activeDetailId.value = activeDetailId.value === id ? null : id;
 };
-
-const comName = computed(() => {
-  if (indexConfig.value.rightBottomSwiper) {
-    return SeamlessScroll;
-  } else {
-    return EmptyCom;
-  }
-});
-function montionFilter(val: any) {
-  return val ? val : "--";
-}
-const handleAddress = (item: any) => {
-  return `${item.provinceName} · ${item.cityName} (${item.countyName})`;
-};
-onMounted(() => {
-  getData();
-});
 </script>
 
 <template>
-  <div class="right_bottom_wrap beautify-scroll-def" :class="{ 'overflow-y-auto': !indexConfig.rightBottomSwiper }">
-    <component
-      :is="comName"
-      :list="state.list"
-      v-model="state.scroll"
-      :singleHeight="state.defaultOption.singleHeight"
-      :step="state.defaultOption.step"
-      :limitScrollNum="state.defaultOption.limitScrollNum"
-      :hover="state.defaultOption.hover"
-      :singleWaitTime="state.defaultOption.singleWaitTime"
-      :wheel="state.defaultOption.wheel"
-    >
-      <ul class="right_bottom">
-        <li class="right_center_item" v-for="(item, i) in state.list" :key="i">
-          <span class="orderNum">{{ Number(i) + 1 }}</span>
-          <div class="inner_right">
-            <div class="dibu"></div>
-            <div class="flex">
-              <div class="info">
-                <span class="labels">床位/监护：</span>
-                <span class="text-content zhuyao"> {{ item.gatewayno }}</span>
-              </div>
-              <div class="info">
-                <span class="labels">仪器：</span>
-                <span class="text-content"> {{ item.terminalno }}</span>
-              </div>
-              <div class="info">
-                <span class="labels">告警值：</span>
-                <span class="text-content warning font-bold"> {{ montionFilter(item.alertvalue) }}</span>
-              </div>
-            </div>
-
-            <div class="flex">
-              <div class="info">
-                <span class="labels shrink-0"> 病区：</span>
-                <span class="ciyao truncate" style="font-size: 12px; width: 220px" :title="handleAddress(item)">
-                  {{ handleAddress(item) }}</span
-                >
-              </div>
-              <div class="info time shrink-0">
-                <span class="labels">时间：</span>
-                <span class="text-content" style="font-size: 12px"> {{ item.createtime }}</span>
-              </div>
-            </div>
-            <div class="flex">
-              <div class="info">
-                <span class="labels">危急预警：</span>
-                <span class="text-content ciyao" :class="{ warning: item.alertdetail }">
-                  【{{ item.alertname }}】{{ item.alertdetail || "无" }}</span
-                >
-              </div>
-            </div>
-          </div>
-        </li>
-      </ul>
-    </component>
+  <div class="feed-wrap">
+    <div class="feed-track">
+      <div
+        v-for="(item, idx) in marqueeItems"
+        :key="`${item.id}-${idx}`"
+        class="feed-row"
+        @click="toggleDetail(`${item.id}-${idx}`)"
+      >
+        <div class="row-top">
+          <span class="row-city">[{{ item.city }}]</span>
+          <span class="row-track">{{ item.track }}</span>
+          <span class="row-time">{{ item.time }}</span>
+          <span
+            class="row-badge"
+            :style="{ color: item.badgeColor, borderColor: item.badgeColor }"
+          >
+            {{ item.status }}
+          </span>
+        </div>
+        <div class="row-title">{{ item.title }}</div>
+        <div v-if="activeDetailId === `${item.id}-${idx}`" class="row-detail">
+          {{ item.detail }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
-.right_bottom {
-  width: 100%;
-  height: 100%;
-
-  .right_center_item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: auto;
-    padding: 10px;
-    font-size: 14px;
-    color: #fff;
-
-    .orderNum {
-      margin: 0 20px 0 -20px;
-    }
-
-    .inner_right {
-      position: relative;
-      height: 100%;
-      width: 400px;
-      flex-shrink: 0;
-      line-height: 1.5;
-
-      .dibu {
-        position: absolute;
-        height: 2px;
-        width: 104%;
-        background-image: url("@/assets/img/zuo_xuxian.png");
-        bottom: -12px;
-        left: -2%;
-        background-size: cover;
-      }
-    }
-
-    .info {
-      margin-right: 10px;
-      display: flex;
-      align-items: center;
-
-      .labels {
-        flex-shrink: 0;
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.6);
-      }
-
-      .zhuyao {
-        color: $primary-color;
-        font-size: 15px;
-      }
-
-      .ciyao {
-        color: rgba(255, 255, 255, 0.8);
-      }
-
-      .warning {
-        color: #e6a23c;
-        font-size: 15px;
-      }
-    }
+@keyframes scrollUpFeed {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
   }
 }
 
-.right_bottom_wrap {
-  overflow: hidden;
+.feed-wrap {
   width: 100%;
-  height: 252px;
+  height: 100%;
+  overflow: hidden;
+  padding: 4px 6px;
+  box-sizing: border-box;
+
+  &:hover .feed-track {
+    animation-play-state: paused;
+  }
 }
 
-.overflow-y-auto {
-  overflow-y: auto;
+.feed-track {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: scrollUpFeed 22s linear infinite;
+}
+
+.feed-row {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(10, 26, 58, 0.58);
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: #00e5c3;
+    background: rgba(0, 229, 195, 0.1);
+  }
+
+  .row-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    margin-bottom: 4px;
+
+    .row-city {
+      color: #f6c85f;
+      font-weight: 700;
+    }
+
+    .row-track {
+      color: #94a3b8;
+      flex: 1;
+    }
+
+    .row-time {
+      color: #64748b;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .row-badge {
+      padding: 1px 6px;
+      border-radius: 10px;
+      border: 1px solid;
+      font-size: 10px;
+      font-weight: 600;
+    }
+  }
+
+  .row-title {
+    font-size: 13px;
+    color: #f1f5f9;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .row-detail {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.14);
+    font-size: 11px;
+    line-height: 1.45;
+    color: #cbd5e1;
+  }
 }
 </style>

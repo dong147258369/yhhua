@@ -5,7 +5,7 @@ import {
     CanvasRenderer
   } from 'echarts/renderers'
   import {
-    BarChart, PieChart, MapChart, EffectScatterChart, LineChart, PictorialBarChart, LinesChart, RadarChart
+    BarChart, PieChart, MapChart, EffectScatterChart, LineChart, PictorialBarChart, LinesChart, RadarChart, GaugeChart
   } from 'echarts/charts'
   import {
     GridComponent,
@@ -21,7 +21,7 @@ import {
 
   use([
     CanvasRenderer,
-    BarChart, PieChart, MapChart, EffectScatterChart, LineChart, PictorialBarChart, LinesChart, RadarChart,
+    BarChart, PieChart, MapChart, EffectScatterChart, LineChart, PictorialBarChart, LinesChart, RadarChart, GaugeChart,
     GridComponent,
     LegendComponent,
     TooltipComponent,

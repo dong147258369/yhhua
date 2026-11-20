@@ -1,169 +1,124 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
-import { countDeviceNum } from "@/api";
 import CountUp from "@/components/count-up";
-import { ElMessage } from "element-plus";
-
-const duration = ref(2);
-const state = reactive({
-  alarmNum: 0,
-  offlineNum: 0,
-  onlineNum: 0,
-  totalNum: 0,
-});
-
-const getData = () => {
-  countDeviceNum()
-    .then((res) => {
-      if (res.success) {
-        state.alarmNum = res.data.alarmNum;
-        state.offlineNum = res.data.offlineNum;
-        state.onlineNum = res.data.onlineNum;
-        state.totalNum = res.data.totalNum;
-      } else {
-        ElMessage.error(res.msg);
-      }
-    })
-    .catch((err) => {
-      ElMessage.error(err);
-    });
-};
-getData();
+import { huacanKpiMetrics } from "@/mock/huacan";
 </script>
 
 <template>
-  <ul class="user_Overview flex">
-    <li class="user_Overview-item item-lan">
-      <div class="user_Overview_nums allnum bgdonghua">
-        <CountUp :endVal="state.totalNum" :duration="duration" />
+  <div class="kpi-grid">
+    <div
+      v-for="item in huacanKpiMetrics"
+      :key="item.key"
+      class="kpi-card"
+      :style="{ '--accent': item.color }"
+    >
+      <div class="kpi-header">
+        <span class="kpi-label">{{ item.label }}</span>
+        <span class="kpi-trend">↑ {{ item.trend }}</span>
       </div>
-      <p>设备总数</p>
-    </li>
-    <li class="user_Overview-item item-lv">
-      <div class="user_Overview_nums online bgdonghua">
-        <CountUp :endVal="state.onlineNum" :duration="duration" />
+      <div class="kpi-value-row">
+        <span class="kpi-value" :style="{ color: item.color }">
+          <CountUp
+            :endVal="item.value"
+            :duration="2"
+            :options="{ decimalPlaces: item.decimals || 0 }"
+          />
+        </span>
+        <span class="kpi-unit">{{ item.unit }}</span>
       </div>
-      <p>在用正常</p>
-    </li>
-    <li class="user_Overview-item item-huang">
-      <div class="user_Overview_nums offline bgdonghua">
-        <CountUp :endVal="state.offlineNum" :duration="duration" />
+      <div class="kpi-bar">
+        <div class="kpi-bar-inner" :style="{ background: item.color }"></div>
       </div>
-      <p>维护停机</p>
-    </li>
-    <li class="user_Overview-item item-hong">
-      <div class="user_Overview_nums laramnum bgdonghua">
-        <CountUp :endVal="state.alarmNum" :duration="duration" />
-      </div>
-      <p>质控预警</p>
-    </li>
-  </ul>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
-@keyframes rotating {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
+.kpi-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 14px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+
+.kpi-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(10, 26, 58, 0.8), rgba(6, 16, 38, 0.9));
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: inset 0 0 18px rgba(0, 180, 255, 0.08);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 229, 195, 0.16), inset 0 0 16px rgba(56, 189, 248, 0.14);
   }
 }
 
-.user_Overview {
-  width: 100%;
-  height: 100%;
+.kpi-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
 
-  li {
-    flex: 1;
+  .kpi-label {
+    font-size: 14px;
+    color: #cbd5e1;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
 
-    p {
-      text-align: center;
-      height: 20px;
-      line-height: 20px;
-      font-size: 15px;
-      font-weight: 500;
-      letter-spacing: 1px;
-    }
+  .kpi-trend {
+    font-size: 12px;
+    color: #00e5c3;
+    background: rgba(0, 229, 195, 0.12);
+    border: 1px solid rgba(0, 229, 195, 0.3);
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+}
 
-    .user_Overview_nums {
-      width: 102px;
-      height: 102px;
-      text-align: center;
-      line-height: 102px;
-      font-size: 24px;
-      font-weight: bold;
-      margin: 40px auto 20px;
-      position: relative;
-      cursor: pointer;
-      transition: transform 0.3s;
+.kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 6px;
 
-      &:hover {
-        transform: scale(1.08);
-      }
+  .kpi-value {
+    font-size: 30px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+    text-shadow: 0 0 12px rgba(246, 200, 95, 0.25);
+  }
 
-      &::before {
-        content: "";
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        background-size: 100% 100%;
-        background-position: center center;
-        background-repeat: no-repeat;
-      }
+  .kpi-unit {
+    font-size: 13px;
+    color: #94a3b8;
+  }
+}
 
-      &.bgdonghua::before {
-        animation: rotating 14s linear infinite;
-      }
-    }
+.kpi-bar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 6px;
 
-    &.item-lan {
-      color: #00fdfa;
-      .user_Overview_nums {
-        text-shadow: 0 0 10px rgba(0, 253, 250, 0.8);
-      }
-      .allnum::before {
-        background-image: url("@/assets/img/left_top_lan.png");
-        filter: drop-shadow(0 0 8px rgba(0, 253, 250, 0.5));
-      }
-    }
-
-    &.item-lv {
-      color: #07f7a8;
-      .user_Overview_nums {
-        text-shadow: 0 0 10px rgba(7, 247, 168, 0.8);
-      }
-      .online::before {
-        background-image: url("@/assets/img/left_top_lv.png");
-        filter: drop-shadow(0 0 8px rgba(7, 247, 168, 0.5));
-      }
-    }
-
-    &.item-huang {
-      color: #ffd04b;
-      .user_Overview_nums {
-        text-shadow: 0 0 10px rgba(255, 208, 75, 0.8);
-      }
-      .offline::before {
-        background-image: url("@/assets/img/left_top_huang.png");
-        filter: drop-shadow(0 0 8px rgba(255, 208, 75, 0.5));
-      }
-    }
-
-    &.item-hong {
-      color: #ff3366;
-      .user_Overview_nums {
-        text-shadow: 0 0 10px rgba(255, 51, 102, 0.8);
-      }
-      .laramnum::before {
-        background-image: url("@/assets/img/left_top_hong.png");
-        filter: drop-shadow(0 0 8px rgba(255, 51, 102, 0.6));
-      }
-    }
+  .kpi-bar-inner {
+    width: 72%;
+    height: 100%;
+    border-radius: 2px;
+    box-shadow: 0 0 8px currentColor;
   }
 }
 </style>
